@@ -1,0 +1,1592 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.2.0
+  description: BookSlot ERP - Multi-tenant Appointment Booking Platform
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: auth
+  - name: businesses
+  - name: appointments
+  - name: bookings
+  - name: slots
+  - name: users
+  - name: dashboard
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ────────────────────────────────────────────────────────────────────
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/verify-otp:
+    post:
+      operationId: verifyOtp
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyOtpBody"
+      responses:
+        "200":
+          description: Verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /auth/me/profile:
+    put:
+      operationId: updateProfile
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── Businesses ──────────────────────────────────────────────────────────────
+  /businesses:
+    get:
+      operationId: listBusinesses
+      tags: [businesses]
+      summary: List all active businesses (public)
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+
+    post:
+      operationId: createBusiness
+      tags: [businesses]
+      summary: Register a new business
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBusinessBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  /businesses/my:
+    get:
+      operationId: getMyBusiness
+      tags: [businesses]
+      summary: Get the current user's business
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  /businesses/{businessId}:
+    get:
+      operationId: getBusiness
+      tags: [businesses]
+      summary: Get business by ID (public)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+    put:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update business profile
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBusinessBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  /businesses/{businessId}/members:
+    get:
+      operationId: listBusinessMembers
+      tags: [businesses]
+      summary: List staff members of a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusinessMember"
+
+    post:
+      operationId: addBusinessMember
+      tags: [businesses]
+      summary: Add a staff member to the business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBusinessMemberBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessMember"
+
+  /businesses/{businessId}/members/{memberId}:
+    delete:
+      operationId: removeBusinessMember
+      tags: [businesses]
+      summary: Remove a staff member
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /businesses/{businessId}/stats:
+    get:
+      operationId: getBusinessStats
+      tags: [businesses]
+      summary: Business-level stats (bookings, appointments, revenue)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessStats"
+
+  /businesses/slug/{slug}:
+    get:
+      operationId: getBusinessBySlug
+      tags: [businesses]
+      summary: Get business by slug (public)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  # ── Appointments ─────────────────────────────────────────────────────────────
+  /appointments:
+    get:
+      operationId: listAppointments
+      tags: [appointments]
+      summary: List appointment types (scoped by business or all published)
+      parameters:
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+        - name: published
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppointmentType"
+
+    post:
+      operationId: createAppointment
+      tags: [appointments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppointmentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentType"
+
+  /appointments/{appointmentId}:
+    get:
+      operationId: getAppointment
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentType"
+
+    put:
+      operationId: updateAppointment
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppointmentBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentType"
+
+    delete:
+      operationId: deleteAppointment
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /appointments/{appointmentId}/publish:
+    post:
+      operationId: publishAppointment
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentType"
+
+  /appointments/{appointmentId}/share-link:
+    get:
+      operationId: getShareLink
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareLinkResponse"
+
+  /appointments/{appointmentId}/questions:
+    get:
+      operationId: listQuestions
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+
+    post:
+      operationId: addQuestion
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddQuestionBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+
+  /appointments/{appointmentId}/slots:
+    get:
+      operationId: getAvailableSlots
+      tags: [slots]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: providerId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSlot"
+
+  # ── Bookings ─────────────────────────────────────────────────────────────────
+  /bookings:
+    get:
+      operationId: listBookings
+      tags: [bookings]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, cancelled, completed]
+        - name: appointmentId
+          in: query
+          schema:
+            type: integer
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+        - name: userId
+          in: query
+          schema:
+            type: integer
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
+    post:
+      operationId: createBooking
+      tags: [bookings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bookings/{bookingId}:
+    get:
+      operationId: getBooking
+      tags: [bookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+    put:
+      operationId: updateBooking
+      tags: [bookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBookingBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{bookingId}/cancel:
+    post:
+      operationId: cancelBooking
+      tags: [bookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{bookingId}/confirm:
+    post:
+      operationId: confirmBooking
+      tags: [bookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  # ── Users (Admin) ─────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [customer, organiser, admin]
+        - name: active
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    put:
+      operationId: updateUser
+      tags: [users]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}/toggle-active:
+    post:
+      operationId: toggleUserActive
+      tags: [users]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── Dashboard ─────────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/peak-hours:
+    get:
+      operationId: getPeakHours
+      tags: [dashboard]
+      parameters:
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PeakHourData"
+
+  /dashboard/provider-utilization:
+    get:
+      operationId: getProviderUtilization
+      tags: [dashboard]
+      parameters:
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderUtilization"
+
+  /dashboard/recent-bookings:
+    get:
+      operationId: getRecentBookings
+      tags: [dashboard]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
+  /dashboard/categories:
+    get:
+      operationId: getBusinessCategories
+      tags: [dashboard]
+      summary: Get business category breakdown for platform overview
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryCount"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: [error, message]
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+        requiresVerification:
+          type: boolean
+      required: [user]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [customer, organiser, admin]
+        isActive:
+          type: boolean
+        isVerified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, fullName, email, role, isActive, isVerified, createdAt]
+
+    SignupBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [customer, organiser]
+      required: [fullName, email, password]
+
+    VerifyOtpBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        otp:
+          type: string
+      required: [email, otp]
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    ForgotPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+
+    ResetPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        otp:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+      required: [email, otp, newPassword]
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+
+    UpdateUserBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [customer, organiser, admin]
+        isActive:
+          type: boolean
+
+    Business:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        logoUrl:
+          type: string
+        coverUrl:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        email:
+          type: string
+        ownerId:
+          type: integer
+        owner:
+          $ref: "#/components/schemas/User"
+        isActive:
+          type: boolean
+        isVerified:
+          type: boolean
+        appointmentCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, slug, category, ownerId, isActive, isVerified, createdAt]
+
+    CreateBusinessBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [healthcare, beauty_wellness, fitness, education, legal, financial, consulting, automotive, home_services, technology, hospitality, other]
+        logoUrl:
+          type: string
+        coverUrl:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        email:
+          type: string
+      required: [name, category]
+
+    UpdateBusinessBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [healthcare, beauty_wellness, fitness, education, legal, financial, consulting, automotive, home_services, technology, hospitality, other]
+        logoUrl:
+          type: string
+        coverUrl:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        email:
+          type: string
+        isActive:
+          type: boolean
+
+    BusinessMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        role:
+          type: string
+          enum: [owner, staff, admin]
+        joinedAt:
+          type: string
+          format: date-time
+      required: [id, businessId, userId, role, joinedAt]
+
+    AddBusinessMemberBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [owner, staff, admin]
+      required: [email]
+
+    BusinessStats:
+      type: object
+      properties:
+        totalAppointmentTypes:
+          type: integer
+        publishedAppointmentTypes:
+          type: integer
+        totalBookings:
+          type: integer
+        confirmedBookings:
+          type: integer
+        pendingBookings:
+          type: integer
+        cancelledBookings:
+          type: integer
+        todayBookings:
+          type: integer
+        upcomingBookings:
+          type: integer
+        totalRevenue:
+          type: number
+        totalStaff:
+          type: integer
+      required: [totalAppointmentTypes, publishedAppointmentTypes, totalBookings, confirmedBookings, pendingBookings, cancelledBookings, todayBookings, upcomingBookings, totalRevenue, totalStaff]
+
+    AppointmentType:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        business:
+          $ref: "#/components/schemas/Business"
+        title:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        isPublished:
+          type: boolean
+        scheduleType:
+          type: string
+          enum: [weekly, flexible]
+        manageCapacity:
+          type: boolean
+        maxCapacity:
+          type: integer
+        advancePayment:
+          type: boolean
+        paymentAmount:
+          type: number
+        manualConfirmation:
+          type: boolean
+        assignmentType:
+          type: string
+          enum: [auto, manual]
+        location:
+          type: string
+        resourceType:
+          type: string
+          enum: [user, resource]
+        workingHours:
+          $ref: "#/components/schemas/WorkingHours"
+        organiser:
+          $ref: "#/components/schemas/User"
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, businessId, title, duration, isPublished, scheduleType, manageCapacity, advancePayment, manualConfirmation, createdAt]
+
+    WorkingHours:
+      type: object
+      properties:
+        monday:
+          $ref: "#/components/schemas/DaySchedule"
+        tuesday:
+          $ref: "#/components/schemas/DaySchedule"
+        wednesday:
+          $ref: "#/components/schemas/DaySchedule"
+        thursday:
+          $ref: "#/components/schemas/DaySchedule"
+        friday:
+          $ref: "#/components/schemas/DaySchedule"
+        saturday:
+          $ref: "#/components/schemas/DaySchedule"
+        sunday:
+          $ref: "#/components/schemas/DaySchedule"
+
+    DaySchedule:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        startTime:
+          type: string
+        endTime:
+          type: string
+      required: [enabled]
+
+    CreateAppointmentBody:
+      type: object
+      properties:
+        businessId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        scheduleType:
+          type: string
+          enum: [weekly, flexible]
+        manageCapacity:
+          type: boolean
+        maxCapacity:
+          type: integer
+        advancePayment:
+          type: boolean
+        paymentAmount:
+          type: number
+        manualConfirmation:
+          type: boolean
+        assignmentType:
+          type: string
+          enum: [auto, manual]
+        location:
+          type: string
+        resourceType:
+          type: string
+          enum: [user, resource]
+        workingHours:
+          $ref: "#/components/schemas/WorkingHours"
+      required: [businessId, title, duration, scheduleType]
+
+    UpdateAppointmentBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        scheduleType:
+          type: string
+          enum: [weekly, flexible]
+        manageCapacity:
+          type: boolean
+        maxCapacity:
+          type: integer
+        advancePayment:
+          type: boolean
+        paymentAmount:
+          type: number
+        manualConfirmation:
+          type: boolean
+        assignmentType:
+          type: string
+          enum: [auto, manual]
+        location:
+          type: string
+        resourceType:
+          type: string
+          enum: [user, resource]
+        workingHours:
+          $ref: "#/components/schemas/WorkingHours"
+
+    PublishBody:
+      type: object
+      properties:
+        isPublished:
+          type: boolean
+      required: [isPublished]
+
+    ShareLinkResponse:
+      type: object
+      properties:
+        link:
+          type: string
+        token:
+          type: string
+      required: [link, token]
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+        appointmentId:
+          type: integer
+        question:
+          type: string
+        questionType:
+          type: string
+          enum: [text, select, checkbox, radio]
+        isRequired:
+          type: boolean
+        options:
+          type: array
+          items:
+            type: string
+      required: [id, appointmentId, question, questionType, isRequired]
+
+    AddQuestionBody:
+      type: object
+      properties:
+        question:
+          type: string
+        questionType:
+          type: string
+          enum: [text, select, checkbox, radio]
+        isRequired:
+          type: boolean
+        options:
+          type: array
+          items:
+            type: string
+      required: [question, questionType, isRequired]
+
+    TimeSlot:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        available:
+          type: boolean
+        remainingCapacity:
+          type: integer
+        providerId:
+          type: integer
+        providerName:
+          type: string
+      required: [startTime, endTime, available]
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        appointmentTypeId:
+          type: integer
+        appointmentType:
+          $ref: "#/components/schemas/AppointmentType"
+        businessId:
+          type: integer
+        business:
+          $ref: "#/components/schemas/Business"
+        customerId:
+          type: integer
+        customer:
+          $ref: "#/components/schemas/User"
+        providerId:
+          type: integer
+        provider:
+          $ref: "#/components/schemas/User"
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+        capacity:
+          type: integer
+        paymentStatus:
+          type: string
+          enum: [unpaid, paid, refunded]
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingAnswer"
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, appointmentTypeId, customerId, startTime, endTime, status, createdAt]
+
+    BookingAnswer:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        question:
+          type: string
+        answer:
+          type: string
+      required: [questionId, question, answer]
+
+    CreateBookingBody:
+      type: object
+      properties:
+        appointmentTypeId:
+          type: integer
+        providerId:
+          type: integer
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          default: 1
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingAnswerInput"
+        notes:
+          type: string
+      required: [appointmentTypeId, startTime, endTime]
+
+    BookingAnswerInput:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        answer:
+          type: string
+      required: [questionId, answer]
+
+    UpdateBookingBody:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+
+    DashboardStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalCustomers:
+          type: integer
+        totalOrganisers:
+          type: integer
+        totalBusinesses:
+          type: integer
+        totalAppointmentTypes:
+          type: integer
+        totalBookings:
+          type: integer
+        confirmedBookings:
+          type: integer
+        pendingBookings:
+          type: integer
+        cancelledBookings:
+          type: integer
+        todayBookings:
+          type: integer
+        upcomingBookings:
+          type: integer
+      required: [totalUsers, totalCustomers, totalOrganisers, totalBusinesses, totalAppointmentTypes, totalBookings, confirmedBookings, pendingBookings, cancelledBookings, todayBookings, upcomingBookings]
+
+    PeakHourData:
+      type: object
+      properties:
+        hour:
+          type: integer
+        bookingCount:
+          type: integer
+        label:
+          type: string
+      required: [hour, bookingCount, label]
+
+    ProviderUtilization:
+      type: object
+      properties:
+        providerId:
+          type: integer
+        providerName:
+          type: string
+        totalSlots:
+          type: integer
+        bookedSlots:
+          type: integer
+        utilizationPercent:
+          type: number
+      required: [providerId, providerName, totalSlots, bookedSlots, utilizationPercent]
+
+    CategoryCount:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+        label:
+          type: string
+      required: [category, count, label]
